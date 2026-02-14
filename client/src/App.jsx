@@ -14,6 +14,8 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <div className="min-h-screen text-white">
+      <div className="min-h-screen backdrop-blur-[2px]">
+
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -29,8 +31,9 @@ export default function App() {
               </>
             </PrivateRoute>
           }
-        />
+          />
       </Routes>
+      </div>
     </div>
   );
 }

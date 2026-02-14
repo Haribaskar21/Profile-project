@@ -3,15 +3,61 @@
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
 
+/* Base backgrounds */
 html {
-  background-color: #0b1220;
+  min-height: 100%;
+  background: radial-gradient(1200px 800px at 10% 10%, #1e293b 0%, transparent 40%),
+              radial-gradient(1000px 700px at 90% 20%, #0f766e 0%, transparent 45%),
+              radial-gradient(900px 600px at 50% 90%, #312e81 0%, transparent 45%),
+              linear-gradient(180deg, #020617 0%, #020617 100%);
+  background-attachment: fixed;
 }
 
+html.dark {
+  background: radial-gradient(1200px 800px at 10% 10%, #0f172a 0%, transparent 40%),
+              radial-gradient(1000px 700px at 90% 20%, #064e3b 0%, transparent 45%),
+              radial-gradient(900px 600px at 50% 90%, #1e1b4b 0%, transparent 45%),
+              linear-gradient(180deg, #020617 0%, #020617 100%);
+  background-attachment: fixed;
+}
 
+/* Subtle animated glow layer */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  background:
+    radial-gradient(600px 400px at 20% 30%, rgba(56, 189, 248, 0.12), transparent 40%),
+    radial-gradient(500px 350px at 80% 40%, rgba(168, 85, 247, 0.12), transparent 45%),
+    radial-gradient(400px 300px at 50% 80%, rgba(34, 197, 94, 0.10), transparent 45%);
+  filter: blur(60px);
+  animation: floatGlow 20s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Soft floating animation */
+@keyframes floatGlow {
+  from {
+    transform: translateY(-20px) translateX(-20px);
+  }
+  to {
+    transform: translateY(20px) translateX(20px);
+  }
+}
+
+/* Fade-in animation helper (you already use this) */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
 }
