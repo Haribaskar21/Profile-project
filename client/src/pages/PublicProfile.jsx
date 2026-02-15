@@ -4,20 +4,22 @@ import API from "../api";
 import ProfileView from "../components/ProfileView";
 
 export default function PublicProfile() {
-  const { userId } = useParams();
+  const { id } = useParams();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    API.get(`/api/public/${userId}/profile`).then(res => setData(res.data));
-  }, [userId]);
+    API.get(`/api/profile/${id}`).then((res) =>
+      setData(res.data)
+    );
+  }, [id]);
 
-  if (!data) return <div className="p-8">Loading...</div>;
+  if (!data) return <div>Loading...</div>;
 
   return (
     <ProfileView
-      profile={data.profile || {}}
-      skills={data.skills || []}
-      experience={data.experience || []}
+      profile={data.profile}
+      skills={data.skills}
+      experience={data.experience}
       onEdit={() => {}}
     />
   );

@@ -8,31 +8,36 @@ export default function Profile() {
   const [skills, setSkills] = useState([]);
   const [experience, setExperience] = useState([]);
   const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAll();
   }, []);
 
   async function loadAll() {
-    const p = await API.get("/api/profile");
-    const s = await API.get("/api/skills");
-    const e = await API.get("/api/experience");
-    setProfile(p.data);
-    setSkills(s.data);
-    setExperience(e.data);
+    setLoading(true);
+    const [p, s, e] = await Promise.all([
+      API.get("/api/profile"),
+      API.get("/api/skills"),
+      API.get("/api/experience"),
+    ]);
+
+    setProfile(p.data || {});
+    setSkills(s.data || []);
+    setExperience(e.data || []);
+    setLoading(false);
   }
 
-  if (editMode) {
+  if (loading) return <div>Loading...</div>;
+
+  if (editMode)
     return (
       <ProfileEdit
         profile={profile}
-        skills={skills}
-        experience={experience}
         reload={loadAll}
         onCancel={() => setEditMode(false)}
       />
     );
-  }
 
   return (
     <ProfileView

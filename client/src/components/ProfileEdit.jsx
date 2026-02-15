@@ -1,103 +1,264 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../api";
 import AvatarUploader from "./AvatarUploader";
 import SkillChips from "./SkillChips";
 import ExperienceTimeline from "./ExperienceTimeline";
 
-export default function ProfileEdit({ profile, skills, experience, reload, onCancel }) {
-  const [form, setForm] = useState(profile);
+export default function ProfileEdit({
+  profile = {},
+  skills = [],
+  experience = [],
+  reload,
+  onCancel,
+}) {
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
   const [skillName, setSkillName] = useState("");
+  const [addingSkill, setAddingSkill] = useState(false);
+  const [addingExp, setAddingExp] = useState(false);
+
   const [expForm, setExpForm] = useState({
-    role: "", company: "", startDate: "", endDate: "", description: ""
+    role: "",
+    company: "",
+    startDate: "",
+    endDate: "",
+    description: "",
   });
 
+  useEffect(() => {
+    setForm(profile || {});
+  }, [profile]);
+
   async function saveProfile() {
-    await API.put("/api/profile", form);
-    reload();
-    onCancel();
+    try {
+      setSaving(true);
+      await API.put("/api/profile", form);
+      await reload?.();
+      onCancel?.();
+    } catch (err) {
+      console.error("Save failed", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addSkill() {
-    if (!skillName) return;
-    await API.post("/api/skills", { name: skillName, level: "Beginner" });
-    setSkillName("");
-    reload();
+    if (!skillName.trim()) return;
+
+    try {
+      setAddingSkill(true);
+      await API.post("/api/skills", {
+        name: skillName,
+        level: "Beginner",
+      });
+      setSkillName("");
+      await reload?.();
+    } catch (err) {
+      console.error("Skill add failed", err);
+    } finally {
+      setAddingSkill(false);
+    }
   }
 
   async function addExperience() {
-    await API.post("/api/experience", expForm);
-    setExpForm({ role: "", company: "", startDate: "", endDate: "", description: "" });
-    reload();
+    if (!expForm.role || !expForm.company) return;
+
+    try {
+      setAddingExp(true);
+      await API.post("/api/experience", expForm);
+      setExpForm({
+        role: "",
+        company: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+      });
+      await reload?.();
+    } catch (err) {
+      console.error("Experience add failed", err);
+    } finally {
+      setAddingExp(false);
+    }
   }
 
   return (
-    <div className="p-8 space-y-8 animate-fadeIn">
-      {/* Profile */}
-      <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
-        <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b1120] text-gray-900 dark:text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-10 md:py-14">
 
-        <AvatarUploader
-          currentAvatar={form.avatar}
-          onUpdated={reload}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
-          <input className="p-2 rounded bg-black/30" placeholder="Title"
-            value={form.title || ""} onChange={e=>setForm({...form, title:e.target.value})}/>
-          <input className="p-2 rounded bg-black/30" placeholder="Location"
-            value={form.location || ""} onChange={e=>setForm({...form, location:e.target.value})}/>
-        </div>
+          {/* LEFT COLUMN */}
+          <aside className="space-y-8">
 
-        <textarea className="w-full mt-4 p-2 rounded bg-black/30" placeholder="Bio"
-          value={form.bio || ""} onChange={e=>setForm({...form, bio:e.target.value})}/>
+            <Card title="Profile Picture">
+              <AvatarUploader
+                currentAvatar={form.avatar}
+                onUpdated={reload}
+              />
+            </Card>
 
-        <div className="flex gap-3 mt-4">
-          <button onClick={saveProfile}
-            className="px-4 py-2 rounded bg-gradient-to-r from-cyan-500 to-purple-600">
-            Save
-          </button>
-          <button onClick={onCancel}
-            className="px-4 py-2 rounded bg-white/10">
-            Cancel
-          </button>
+            <Card title="Basic Info">
+              <Input
+                label="Full Name"
+                value={form.name || ""}
+                onChange={(v) => setForm({ ...form, name: v })}
+              />
+              <Input
+                label="Title"
+                value={form.title || ""}
+                onChange={(v) => setForm({ ...form, title: v })}
+              />
+              <Input
+                label="Location"
+                value={form.location || ""}
+                onChange={(v) => setForm({ ...form, location: v })}
+              />
+            </Card>
+
+            <Card title="Social Links">
+              <Input
+                label="LinkedIn"
+                value={form.linkedin || ""}
+                onChange={(v) => setForm({ ...form, linkedin: v })}
+              />
+              <Input
+                label="GitHub"
+                value={form.github || ""}
+                onChange={(v) => setForm({ ...form, github: v })}
+              />
+              <Input
+                label="Website"
+                value={form.website || ""}
+                onChange={(v) => setForm({ ...form, website: v })}
+              />
+            </Card>
+
+          </aside>
+
+          {/* RIGHT COLUMN */}
+          <main className="lg:col-span-2 space-y-8">
+
+            <Card title="About">
+              <textarea
+                rows="4"
+                className="w-full p-4 rounded-xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 outline-none"
+                value={form.bio || ""}
+                onChange={(e) =>
+                  setForm({ ...form, bio: e.target.value })
+                }
+              />
+            </Card>
+
+            <Card title="Manage Skills">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <input
+                  className="flex-1 p-3 rounded-xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 outline-none"
+                  placeholder="Add new skill"
+                  value={skillName}
+                  onChange={(e) => setSkillName(e.target.value)}
+                />
+                <button
+                  onClick={addSkill}
+                  disabled={addingSkill}
+                  className="px-6 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black w-full sm:w-auto"
+                >
+                  {addingSkill ? "Adding..." : "Add"}
+                </button>
+              </div>
+
+              <SkillChips skills={skills} reload={reload} />
+            </Card>
+
+            <Card title="Manage Experience">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Input
+                  label="Role"
+                  value={expForm.role}
+                  onChange={(v) =>
+                    setExpForm({ ...expForm, role: v })
+                  }
+                />
+                <Input
+                  label="Company"
+                  value={expForm.company}
+                  onChange={(v) =>
+                    setExpForm({ ...expForm, company: v })
+                  }
+                />
+              </div>
+
+              <textarea
+                className="w-full p-3 rounded-xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 outline-none mb-6"
+                placeholder="Description"
+                value={expForm.description}
+                onChange={(e) =>
+                  setExpForm({
+                    ...expForm,
+                    description: e.target.value,
+                  })
+                }
+              />
+
+              <button
+                onClick={addExperience}
+                disabled={addingExp}
+                className="px-6 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black w-full sm:w-auto"
+              >
+                {addingExp ? "Adding..." : "Add Experience"}
+              </button>
+
+              <div className="mt-8">
+                <ExperienceTimeline experiences={experience} />
+              </div>
+            </Card>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-end">
+              <button
+                onClick={onCancel}
+                className="px-6 py-2 rounded-xl border border-gray-300 dark:border-white/20 w-full sm:w-auto"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={saveProfile}
+                disabled={saving}
+                className="px-6 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black w-full sm:w-auto"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
+          </main>
+
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Skills */}
-      <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
-        <h2 className="text-xl font-bold mb-4">Edit Skills</h2>
-        <div className="flex gap-2 mb-4">
-          <input className="flex-1 p-2 rounded bg-black/30" placeholder="New skill"
-            value={skillName} onChange={e=>setSkillName(e.target.value)}/>
-          <button onClick={addSkill} className="px-4 rounded bg-cyan-500/30">Add</button>
-        </div>
-        <SkillChips skills={skills} reload={reload} />
-      </div>
+/* ---------- Reusable Components ---------- */
 
-      {/* Experience */}
-      <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
-        <h2 className="text-xl font-bold mb-4">Edit Experience</h2>
+function Card({ title, children }) {
+  return (
+    <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+      <h3 className="text-lg font-semibold">{title}</h3>
+      {children}
+    </div>
+  );
+}
 
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <input className="p-2 rounded bg-black/30" placeholder="Role"
-            value={expForm.role} onChange={e=>setExpForm({...expForm, role:e.target.value})}/>
-          <input className="p-2 rounded bg-black/30" placeholder="Company"
-            value={expForm.company} onChange={e=>setExpForm({...expForm, company:e.target.value})}/>
-          <input className="p-2 rounded bg-black/30" placeholder="Start Date"
-            value={expForm.startDate} onChange={e=>setExpForm({...expForm, startDate:e.target.value})}/>
-          <input className="p-2 rounded bg-black/30" placeholder="End Date"
-            value={expForm.endDate} onChange={e=>setExpForm({...expForm, endDate:e.target.value})}/>
-        </div>
-        <textarea className="w-full p-2 rounded bg-black/30 mb-4" placeholder="Description"
-          value={expForm.description} onChange={e=>setExpForm({...expForm, description:e.target.value})}/>
-
-        <button onClick={addExperience}
-          className="mb-6 px-4 py-2 rounded bg-gradient-to-r from-cyan-500 to-purple-600">
-          Add Experience
-        </button>
-
-        <ExperienceTimeline items={experience} reload={reload} />
-      </div>
+function Input({ label, value, onChange }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm opacity-60">{label}</label>
+      <input
+        className="w-full p-3 rounded-xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 outline-none"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

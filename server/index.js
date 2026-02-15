@@ -8,8 +8,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
+
 app.use(express.json());
+
 
 // ------------------ DB ------------------
 mongoose
@@ -170,6 +175,29 @@ app.delete("/api/skills/:id", authMiddleware, async (req, res) => {
   await Skill.deleteOne({ _id: req.params.id, userId: req.userId });
   res.json({ success: true });
 });
+
+// Endorse skill
+app.post("/api/skills/:id/endorse", authMiddleware, async (req, res) => {
+  try {
+    const skill = await Skill.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!skill) {
+      return res.status(404).json({ message: "Skill not found" });
+    }
+
+    skill.endorsements += 1;
+    await skill.save();
+
+    res.json(skill);
+  } catch (err) {
+    console.error("Endorse error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 // ------------------ EXPERIENCE ROUTES ------------------
 
